@@ -6,6 +6,9 @@ The purpose of this project is to employ unsupervised machine learning methods a
 ## Emails.csv
 This is the [Hillary Clinton Emails dataset](https://www.kaggle.com/kaggle/hillary-clinton-emails) that we used, found on Kaggle.  
 
+## code.Rmd
+This R Markdown Notebook file contains all code for the sentiment analysis and structural topic modeling that we ran on the dataset.
+
 ## Loughran-McDonald [Sentiment Word Lists](https://sraf.nd.edu/textual-analysis/resources/#LM%20Sentiment%20Word%20Lists) 
 The following .txt files were pulled from Loughran-McDonald Sentiment Word Lists:
 * uncertainty.txt
@@ -18,3 +21,4 @@ The following .txt files were pulled from Loughran-McDonald Sentiment Word Lists
 ## positive-words.txt
 ## negative-words.txt
 Positive and Negative words from the [Harvard IV-4 Dictionary](http://www.wjh.harvard.edu/~inquirer/homecat.htm)
+
