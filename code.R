@@ -1,0 +1,277 @@
+#title: "Challenge 2"
+#author: "Xixi Zheng, Jenny Wu, Sally Rong, Manuel Duran"
+#date: "3/8/2021"
+
+# Load necessary packages
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+library(dplyr)
+library(stm)
+library(tm)
+library(SnowballC)
+library(Matrix)
+library(stringr)
+library(ggplot2)
+
+#CLEANING DATA --------------------------------------------------------------
+emails = read.csv("Emails.csv")
+text = emails[,22]
+
+#running the RawText through the text processor to format the string and remove any uncessary stop words
+part1 <- textProcessor(text)
+#extracting relevant arguments
+vocab <- part1$vocab
+docs <- part1$documents
+
+#re-processing data for analysis in stm function
+out <- prepDocuments(documents = docs, vocab = vocab)
+docs2 <- out$documents
+vocab2 <- out$vocab
+
+
+
+#creating a new variable to indicate year that the email was sent 
+dates = emails %>% select(MetadataDateSent, RawText)
+
+#using substring to extract the year sent
+dates$year = as.numeric(substr(dates$MetadataDateSent, 1, 4))
+
+#creating a frequency table to see the distribution of emails sent in different years
+table(dates$year)
+
+
+
+#create new dataset containing only the emails sent before 2009
+pre10 = subset(emails, subset = 
+                 (substr(emails$MetadataDateSent,
+                         1, 4) == "2008") | (substr(emails$MetadataDateSent,
+                                                    1, 4) == "2009"))
+#prepping the dataset for stm analysis
+pre10 = pre10[,22]
+
+pre = textProcessor(pre10)
+vocab3 = pre$vocab
+docs3 = pre$documents
+
+pre_out = prepDocuments(documents = docs3, vocab = vocab3)
+pre_docs = pre_out$documents 
+pre_vocab = pre_out$vocab
+
+
+
+#create another dataset containing only the emails sent during and after 2010
+post10 = subset(emails, subset = 
+                  (substr(emails$MetadataDateSent,
+                          1, 4) == "2010"| (substr(emails$MetadataDateSent,
+                                                   1, 4) == "2011")) |(substr(emails$MetadataDateSent,
+                                                                              1, 4) == "2012") | (substr(emails$MetadataDateSent,
+                                                                                                         1, 4) == "2014"))
+#prepping the dataset for stm analysis
+post10 = post10[,22]
+
+post = textProcessor(post10)
+vocab4 = post$vocab
+docs4 = post$documents 
+
+post_out = prepDocuments(documents = docs4, vocab = vocab4)
+post_docs = post_out$documents 
+post_vocab = post_out$vocab
+
+
+
+# STRUCTURAL TOPIC MODELING --------------------------------------------------------------
+#run stm for entire dataset 
+topmod_fit <- stm(documents = docs2, 
+                  vocab = vocab2, K = 20, seed = 123)
+labelTopics(topmod_fit)
+
+#run stm for emails sent before 2010 with K = 10 and 20 
+pre_topmod_fit = stm(documents = pre_docs, vocab = pre_vocab, K = 10, seed = 123)
+labelTopics(pre_topmod_fit)
+
+pre_topmod_fit2 = stm(documents = pre_docs, vocab = pre_vocab, K = 20, seed = 123)
+labelTopics(pre_topmod_fit2)
+
+#run stm for emails sent during and after 2010 with K = 10 and 20 
+post_topmod_fit = stm(documents = post_docs, vocab = post_vocab, K = 10, seed = 123)
+labelTopics(post_topmod_fit)
+
+post_topmod_fit2 = stm(documents = post_docs, vocab = post_vocab, K = 20, seed = 123)
+labelTopics(post_topmod_fit2)
+
+
+# SENTIMENT ANALYSIS --------------------------------------------------------------
+rm(list = ls())
+
+emails = read.csv("Emails.csv")
+
+#splitting the data temporally from 2010; resubsetting the data to include 2008 + 2009 emails 
+pre10 = subset(emails, subset = 
+                 (substr(emails$MetadataDateSent,
+                         1, 4) == "2008") | (substr(emails$MetadataDateSent,
+                                                    1, 4) == "2009"))
+#resubsetting the data to include all emails 2010, including 2010 emails 
+post10 = subset(emails, subset = 
+                  (substr(emails$MetadataDateSent,
+                          1, 4) == "2010"| (substr(emails$MetadataDateSent,
+                                                   1, 4) == "2011")) |(substr(emails$MetadataDateSent,
+                                                                              1, 4) == "2012") | (substr(emails$MetadataDateSent,
+                                                                                                         1, 4) == "2014"))
+
+#function to parse out the raw body email text from the corpuse and cleaning output to remove
+#punctuations and unwanted spaces
+#text pre-processing to create vectors for the emails
+clean <- function(data){
+  vec = list()
+  for(i in 1:length(data)){
+    d <- tolower(data[i])
+    d <- gsub(pattern = "\\W", replacement = " ", x = d)
+    d <- gsub(pattern = "\\s+", replacement = " ", x = d)
+    d <- gsub(pattern = "\\s$", replacement = "", x = d)
+    vec[[i]] <- str_split(string = d, pattern = "\\s")
+  }
+  return(vec)
+}
+
+# inputting each subset of data into the function to be cleaned and saved repsectively
+all <- clean(emails[,22])
+pre <- clean(pre10[,22])
+include.10.and.on <- clean(post10[,22])
+
+
+
+# setwd("Documents/POLI 175/words")
+# Loading Dictionaries
+uncertainty <- tolower(read.delim("uncertainty.txt", 
+                                  header = F, stringsAsFactors = F)[,1])
+strong.modal <- tolower(read.delim("strongmodal.txt", 
+                                   header = F, stringsAsFactors = F)[,1])
+weak.modal <- tolower(read.delim("weakmodal.txt", 
+                                 header = F, stringsAsFactors = F)[,1])
+litigious <- tolower(read.delim("litigous.txt", 
+                                header = F, stringsAsFactors = F)[,1])
+constraining <- tolower(read.delim("constraining.txt", 
+                                   header = F, stringsAsFactors = F)[,1])
+pos_words <- read.delim("positive-words.txt", header = F, stringsAsFactors = F)[,1]
+neg_words <- read.delim("negative-words.txt", header = F, stringsAsFactors = F)[,1]
+
+# creating objects to store sentiment counts
+pre.uncertainty.count <- NA; pre.strong.modal.count <- NA 
+pre.weak.modal.count <- NA ; pre.litigious.count <- NA 
+pre.constraining.count <- NA
+
+post.uncertainty.count <- NA; post.strong.modal.count <- NA 
+post.weak.modal.count <- NA ; post.litigious.count <- NA 
+post.constraining.count <- NA
+
+uncertainty.count <- NA; strong.modal.count <- NA
+weak.modal.count <- NA ; litigious.count <- NA
+constraining.count <- NA
+
+pos.count <- NA ; neg.count <- NA; pre.pos<- NA
+pre.neg<- NA; post.pos<- NA ; post.neg<- NA
+
+#for loops for identifying the count of words in each sentiment dictionary
+
+for (i in 1:length(all)) # sentiment analysis count for ALL emails
+{
+  uncertainty.count[i] <- sum(as.numeric(unlist(all[[i]]) %in% uncertainty))
+  constraining.count[i] <- sum(as.numeric(unlist(all[[i]]) %in% constraining))
+  litigious.count[i] <- sum(as.numeric(unlist(all[[i]]) %in% litigious))
+  strong.modal.count[i] <- sum(as.numeric(unlist(all[[i]]) %in% strong.modal))
+  weak.modal.count[i] <- sum(as.numeric(unlist(all[[i]]) %in% weak.modal))
+  pos.count[i] <- sum(as.numeric(unlist(all[[i]]) %in% pos_words))
+  neg.count[i] <- sum(as.numeric(unlist(all[[i]]) %in% neg_words))
+}
+
+
+# ratios and histograms for positive and negative tones
+ratio.all <- NA ; ratio.pre <- NA ; ratio.post <- NA
+
+for(i in 1:length(all)){
+  ratio.all[i] <- pos.count[i] / (neg.count[i] + pos.count[i])
+}
+
+for(i in 1:length(pre)){
+  ratio.pre[i] <- pre.pos[i] / (pre.neg[i] + pre.pos[i])
+}
+
+for(i in 1:length(include.10.and.on)){
+  ratio.post[i] <- post.pos[i] / (post.neg[i] + post.pos[i])
+}
+
+#remove the elements that had 0 counts for both positive and negative so we are able to look at a more general trend without 
+ratio.all = na.omit(ratio.all)
+ratio.pre = na.omit(ratio.pre)
+ratio.post = na.omit(ratio.post)
+
+#plot histograms
+his.all<- hist(ratio.all); his.pre<- hist(ratio.pre); his.post<-hist(ratio.post)
+
+for (i in 1:length(pre)) # sentiment analysis count for emails BEFORE 2010
+{
+  pre.uncertainty.count[i] <- sum(as.numeric(unlist(pre[[i]]) %in% uncertainty))
+  pre.constraining.count[i] <- sum(as.numeric(unlist(pre[[i]]) %in% constraining))
+  pre.litigious.count[i] <- sum(as.numeric(unlist(pre[[i]]) %in% litigious))
+  pre.strong.modal.count[i] <- sum(as.numeric(unlist(pre[[i]]) %in% strong.modal))
+  pre.weak.modal.count[i] <- sum(as.numeric(unlist(pre[[i]]) %in% weak.modal))
+  pre.pos[i] <- sum(as.numeric(unlist(pre[[i]]) %in% pos_words))
+  pre.neg[i] <- sum(as.numeric(unlist(pre[[i]]) %in% neg_words))
+} 
+
+for (i in 1:length(include.10.and.on))  # sentiment analysis count for emails from 2010 AND ON
+{
+  post.uncertainty.count[i] <- sum(as.numeric(unlist(include.10.and.on[[i]]) %in% uncertainty))
+  post.constraining.count[i] <- sum(as.numeric(unlist(include.10.and.on[[i]]) %in% constraining))
+  post.litigious.count[i] <- sum(as.numeric(unlist(include.10.and.on[[i]]) %in% litigious))
+  post.strong.modal.count[i] <- sum(as.numeric(unlist(include.10.and.on[[i]]) %in% strong.modal))
+  post.weak.modal.count[i] <- sum(as.numeric(unlist(include.10.and.on[[i]]) %in% weak.modal))
+  post.pos[i] <- sum(as.numeric(unlist(include.10.and.on[[i]]) %in% pos_words))
+  post.neg[i] <- sum(as.numeric(unlist(include.10.and.on[[i]]) %in% neg_words))
+} 
+
+
+# prepping sentiment analysis counts for graphing
+gp.all <- data.frame(uncertainty.count,constraining.count,litigious.count,
+                     strong.modal.count, weak.modal.count)
+gp.pre10 <- data.frame(pre.uncertainty.count, pre.constraining.count, pre.litigious.count,
+                       pre.strong.modal.count, pre.weak.modal.count)
+include.10.and.on <- data.frame(post.uncertainty.count, post.constraining.count, 
+                                post.litigious.count, post.strong.modal.count, post.weak.modal.count)
+
+# tuning into long form data for graphing
+require(tidyr)
+gp.all <- gather(gp.all, variable,value)
+gp.pre10 <- gather(gp.pre10, variable,value)
+include.10.and.on <- gather(include.10.and.on, variable,value)
+
+# creating initial graphs
+gp.all <- ggplot(data = gp.all, aes(x = variable, y = value, fill = variable)) +
+  geom_col(position = position_dodge()) 
+gp.pre10 <- ggplot(data = gp.pre10, aes(x = variable, y = value, fill = variable)) +
+  geom_col(position = position_dodge()) 
+include.10.and.on <- ggplot(data = include.10.and.on, aes(x = variable, y = value, fill = variable)) + geom_col(position = position_dodge()) 
+
+# adding labels to graphs 
+gp.all + ggtitle("Overall Sentiment Frequencies") + xlab("") + ylab("") + scale_fill_discrete(name = "", labels = c("Constraining","Litigious","Strong Modal", "Uncertainty","Weak Modal")) + 
+  theme(axis.text.x=element_text(angle = -25, hjust = 0)) + 
+  scale_x_discrete(labels=c("constraining.count"="Constraining","litigious.count"= "Litigious", "strong.modal.count"= "Strong Modal","uncertainty.count"="Uncertainty","weak.modal.count" = "Weak Modal"))
+
+gp.pre10 + ggtitle("Pre 2010 Sentiment Frequencies") + xlab("") + ylab("") + scale_fill_discrete(name = "", labels = c("Constraining","Litigious","Strong Modal", "Uncertainty","Weak Modal")) + 
+  theme(axis.text.x=element_text(angle = -25, hjust = 0)) + 
+  scale_x_discrete(labels=c("constraining.count"="Constraining","litigious.count"= "Litigious", "strong.modal.count"= "Strong Modal","uncertainty.count"="Uncertainty","weak.modal.count" = "Weak Modal"))
+
+include.10.and.on + ggtitle("2010 and on Sentiment Frequencies") + xlab("") + ylab("") + scale_fill_discrete(name = "", labels = c("Constraining","Litigious","Strong Modal", "Uncertainty","Weak Modal")) + 
+  theme(axis.text.x=element_text(angle = -25, hjust = 0)) + 
+  scale_x_discrete(labels=c("constraining.count"="Constraining","litigious.count"= "Litigious", "strong.modal.count"= "Strong Modal","uncertainty.count"="Uncertainty","weak.modal.count" = "Weak Modal"))
+
+
+#T-Test for Temporal Split of Data -----------------------------------------------------------------------------------
+#run t tests to look at statistical significance of the difference in frequency between emails sent pre 2010 and from 2010 onwards
+t.test(pre.uncertainty.count, post.uncertainty.count)
+t.test(pre.constraining.count, post.constraining.count)
+t.test(pre.litigious.count, post.litigious.count)
+t.test(pre.strong.modal.count, post.strong.modal.count)
+t.test(pre.weak.modal.count, post.weak.modal.count)
+t.test(pre.pos, post.pos)
+t.test(pre.neg, post.neg)
