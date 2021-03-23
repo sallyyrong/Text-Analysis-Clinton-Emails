@@ -12,6 +12,9 @@ This R Markdown Notebook file contains all code for the sentiment analysis and s
 ## code.html
 This html file contains all the code from code.Rmd, including the outputs of the code in R.
 
+## write-up.pdf
+This is our write-up communicating the results of our project, including our key insight from Clinton's released emails and data visualizations that we made.
+
 ## Loughran-McDonald [Sentiment Word Lists](https://sraf.nd.edu/textual-analysis/resources/#LM%20Sentiment%20Word%20Lists) 
 The following .txt files were pulled from Loughran-McDonald Sentiment Word Lists:
 * uncertainty.txt
