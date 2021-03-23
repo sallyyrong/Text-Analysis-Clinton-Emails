@@ -9,8 +9,8 @@ This is our write-up communicating the results of our project, including our key
 ## code.rmd
 This R Markdown Notebook file contains all code for the sentiment analysis and structural topic modeling that we ran on the dataset.
 
-## code.html
-This html file contains all the code from code.Rmd, including the outputs of the code in R.
+## code.R
+This R script contains the same information as code.Rmd Notebook file, in form of an R script
 
 ## Emails.csv
 This is the [Hillary Clinton Emails dataset](https://www.kaggle.com/kaggle/hillary-clinton-emails) that we used, found on Kaggle.  
