@@ -9,6 +9,9 @@ This is the [Hillary Clinton Emails dataset](https://www.kaggle.com/kaggle/hilla
 ## code.Rmd
 This R Markdown Notebook file contains all code for the sentiment analysis and structural topic modeling that we ran on the dataset.
 
+## code.html
+This html file contains all the code from code.Rmd, including the outputs of the code in R.
+
 ## Loughran-McDonald [Sentiment Word Lists](https://sraf.nd.edu/textual-analysis/resources/#LM%20Sentiment%20Word%20Lists) 
 The following .txt files were pulled from Loughran-McDonald Sentiment Word Lists:
 * uncertainty.txt
