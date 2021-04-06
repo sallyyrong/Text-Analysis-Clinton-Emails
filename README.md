@@ -1,3 +1,4 @@
+# Text Analysis of Released Clinton Emails
 
 # Introduction
 The purpose of this project is to employ unsupervised machine learning methods and conduct text analysis to identify a key insight or discovery. For this project, we used a dataset of released emails that were sent and received by Hillary Clinton as she served as Secretary of State (and was embroiled in controversy throughout 2015 over her use of personal email accounts on non-government servers). We utilize topic modeling and sentiment analysis methods in our textual analysis of the released emails. </body>
